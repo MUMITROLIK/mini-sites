@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM — Mini-Sites Office</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3348;
+    --text: #e8eaf2;
+    --muted: #7b82a0;
+    --accent: #6c8fff;
+    --new:      #4a5568; --new-text: #a0aec0;
+    --sent:     #2563eb; --sent-text: #93c5fd;
+    --replied:  #d97706; --replied-text: #fcd34d;
+    --inwork:   #7c3aed; --inwork-text: #c4b5fd;
+    --won:      #059669; --won-text: #6ee7b7;
+    --skip:     #374151; --skip-text: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .logo { font-size: 18px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .logo span { color: var(--accent); }
+  .stats { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: default; }
+  .stat-count { font-weight: 700; font-size: 15px; }
+  .stat.s-new    .stat-count { color: var(--new-text); }
+  .stat.s-sent   .stat-count { color: var(--sent-text); }
+  .stat.s-replied .stat-count { color: var(--replied-text); }
+  .stat.s-inwork .stat-count { color: var(--inwork-text); }
+  .stat.s-won    .stat-count { color: var(--won-text); }
+
+  /* ── FILTERS ── */
+  .filters { padding: 12px 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .filter-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 14px; color: var(--muted); cursor: pointer; font-size: 13px; transition: all .15s; }
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .niche-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; color: var(--text); font-size: 13px; cursor: pointer; outline: none; }
+  .search-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; color: var(--text); font-size: 13px; outline: none; width: 180px; }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: var(--accent); }
+  .filter-right { margin-left: auto; display: flex; gap: 8px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; padding: 16px 20px; }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tr.lead-row { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tr.lead-row:hover { background: var(--surface2); }
+  tr.lead-row.status-skip { opacity: .4; }
+  tr.lead-row.status-won { background: rgba(5,150,105,.07); }
+  tr.lead-row.status-replied { background: rgba(217,119,6,.06); }
+  td { padding: 10px 12px; vertical-align: top; }
+
+  .lead-num { color: var(--muted); font-size: 12px; min-width: 28px; }
+  .lead-name { font-weight: 600; color: var(--text); line-height: 1.3; }
+  .lead-name.highlight { color: #fcd34d; }
+  .lead-city { color: var(--muted); font-size: 12px; }
+  .niche-pill { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px; font-size: 11px; white-space: nowrap; }
+
+  .phone-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; color: var(--accent); font-size: 12px; cursor: pointer; font-family: monospace; transition: all .12s; white-space: nowrap; }
+  .phone-btn:hover { background: var(--accent); color: #fff; }
+  .phone-btn.copied { background: var(--won); border-color: var(--won); color: #fff; }
+  .no-phone { color: var(--muted); font-size: 12px; }
+
+  .ig-link { color: var(--accent); font-size: 12px; text-decoration: none; }
+  .ig-link:hover { text-decoration: underline; }
+
+  /* STATUS */
+  .status-btn { border: none; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all .12s; }
+  .status-btn.s-new    { background: var(--new);    color: var(--new-text); }
+  .status-btn.s-sent   { background: var(--sent);   color: var(--sent-text); }
+  .status-btn.s-replied{ background: var(--replied);color: var(--replied-text); }
+  .status-btn.s-inwork { background: var(--inwork); color: var(--inwork-text); }
+  .status-btn.s-won    { background: var(--won);    color: var(--won-text); }
+  .status-btn.s-skip   { background: var(--skip);   color: var(--skip-text); }
+  .status-btn:hover { filter: brightness(1.2); }
+
+  /* NOTES */
+  .notes-input { background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--text); font-size: 12px; width: 100%; min-width: 120px; outline: none; padding: 2px 0; resize: none; font-family: inherit; }
+  .notes-input:focus { border-bottom-color: var(--accent); }
+  .notes-input::placeholder { color: var(--muted); }
+
+  /* SOURCE BADGE */
+  .source-badge { display: inline-block; background: var(--surface2); border-radius: 4px; padding: 1px 7px; font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+  /* EMPTY */
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 16px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--won); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; transform: translateY(10px); transition: all .25s; pointer-events: none; z-index: 9999; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 600px) {
+    .header { padding: 10px 12px; }
+    .table-wrap { padding: 8px 4px; }
+    .filters { padding: 8px 12px; }
+    .filter-right { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🚀 Mini-Sites <span>CRM</span></div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">Всі</button>
+  <button class="filter-btn" data-filter="new">⬜ Нові</button>
+  <button class="filter-btn" data-filter="sent">📤 Написали</button>
+  <button class="filter-btn" data-filter="replied">💬 Відповіли</button>
+  <button class="filter-btn" data-filter="inwork">🔨 В роботі</button>
+  <button class="filter-btn" data-filter="won">✅ Продано</button>
+  <button class="filter-btn" data-filter="skip">❌ Пропущено</button>
+  <div class="filter-right">
+    <select class="niche-select" id="niche-filter">
+      <option value="">Всі ніші</option>
+      <option>💅 Манікюр</option>
+      <option>✂️ Барбершоп</option>
+      <option>📸 Фото</option>
+      <option>📚 Репетитор</option>
+      <option>🎂 Торти</option>
+      <option>🧘 Йога</option>
+      <option>🔧 СТО</option>
+    </select>
+    <input class="search-input" id="search" placeholder="🔍 Пошук...">
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Бізнес</th>
+        <th>Ніша</th>
+        <th>Телефон</th>
+        <th>Instagram</th>
+        <th>Джерело</th>
+        <th>Статус</th>
+        <th>Нотатка</th>
+      </tr>
+    </thead>
+    <tbody id="leads-body"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none">Нічого не знайдено</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LEADS = [
+  { id:1,  name:"Манікюр Героїв Дніпра / Оболонь",       city:"Київ",             niche:"💅 Манікюр",    phone:"+380633444959", ig:"",                      src:"OLX"          },
+  { id:2,  name:"Манікюр / Педикюр Позняки-Осокорки",    city:"Київ",             niche:"💅 Манікюр",    phone:"+380679125101", ig:"",                      src:"OLX"          },
+  { id:3,  name:"Манікюр / Педикюр / Ламі Позняки",      city:"Київ",             niche:"💅 Манікюр",    phone:"",              ig:"",                      src:"OLX",         defStatus:"skip", note:"Дублікат #2" },
+  { id:4,  name:"Подологія + Манікюр ХТЗ",               city:"Харків",           niche:"💅 Манікюр",    phone:"+380631573606", ig:"",                      src:"OLX"          },
+  { id:5,  name:"Безкоштовна стрижка Барбершоп",         city:"Київ",             niche:"✂️ Барбершоп",  phone:"",              ig:"",                      src:"OLX-чат",     defStatus:"skip", note:"Без телефону, тільки OLX-чат" },
+  { id:6,  name:"Барбер виїзд додому",                   city:"Львів",            niche:"✂️ Барбершоп",  phone:"+380938755871", ig:"",                      src:"OLX"          },
+  { id:7,  name:"Барбершоп Шевченківський",              city:"Львів",            niche:"✂️ Барбершоп",  phone:"+380636068116", ig:"",                      src:"OLX"          },
+  { id:8,  name:"Барбершоп Позняки (є CRM)",             city:"Київ",             niche:"✂️ Барбершоп",  phone:"",              ig:"",                      src:"OLX-чат",     defStatus:"skip", note:"Без телефону; є власна CRM" },
+  { id:9,  name:"Барбер — камуфлювання сивини",          city:"Київ",             niche:"✂️ Барбершоп",  phone:"+380676612407", ig:"",                      src:"OLX"          },
+  { id:10, name:"Фуд-фотограф (є сайт davai.com.ua)",   city:"Київ",             niche:"📸 Фото",        phone:"+380633636333", ig:"",                      src:"OLX",         defStatus:"skip", note:"Вже є сайт" },
+  { id:11, name:"Авто-фотограф Подільський",             city:"Київ",             niche:"📸 Фото",        phone:"+380993544019", ig:"@kyiv_auto_photo",       src:"OLX"          },
+  { id:12, name:"Фотограф Одеса",                        city:"Одеса",            niche:"📸 Фото",        phone:"+380631182107", ig:"",                      src:"OLX"          },
+  { id:13, name:"Весільний фотограф Одеса",              city:"Одеса",            niche:"📸 Фото",        phone:"",              ig:"",                      src:"OLX",         defStatus:"skip", note:"Дублікат #12" },
+  { id:14, name:"Ксенія — сімейний фотограф",            city:"Львів",            niche:"📸 Фото",        phone:"+380673746605", ig:"@ksenia_kovalchuk_ph",  src:"OLX"          },
+  { id:15, name:"Репетитор математики (НМТ)",            city:"Київ",             niche:"📚 Репетитор",   phone:"+380973464743", ig:"",                      src:"OLX"          },
+  { id:16, name:"Репетитор англ. A1-B1 онлайн",          city:"Київ / UK",        niche:"📚 Репетитор",   phone:"+447990866049", ig:"",                      src:"OLX"          },
+  { id:17, name:"Artprezent — торти",                    city:"Львів",            niche:"🎂 Торти",       phone:"+380985335338", ig:"",                      src:"Google Maps"  },
+  { id:18, name:"Torty Ta Deserty",                      city:"Львів",            niche:"🎂 Торти",       phone:"",              ig:"@tort.tut.lviv",         src:"Google Maps"  },
+  { id:19, name:"Розумна Йога",                          city:"Львів",            niche:"🧘 Йога",        phone:"+380969900770", ig:"",                      src:"Google Maps"  },
+  { id:20, name:"Йога УФЙ (Dance Studio)",               city:"Львів",            niche:"🧘 Йога",        phone:"+380987080908", ig:"@yoga_dance_studio_lviv",src:"Google Maps"  },
+  { id:21, name:"Green Tara — Аєнгар-йога",             city:"Львів",            niche:"🧘 Йога",        phone:"+380997891352", ig:"",                      src:"Google Maps"  },
+  { id:22, name:"СТО ЗАГФРИМ",                           city:"Дніпро",           niche:"🔧 СТО",         phone:"+380684645013", ig:"",                      src:"Google Maps"  },
+  { id:23, name:'СТО "Фаворит"',                         city:"Вінниця",          niche:"🔧 СТО",         phone:"+380936240330", ig:"",                      src:"Google Maps"  },
+  { id:24, name:'СТО "SERVICE 88"',                      city:"Вінниця",          niche:"🔧 СТО",         phone:"+380988810588", ig:"",                      src:"Google Maps"  },
+  { id:25, name:"Brovki — брови / вії / перманент",      city:"Одеса",            niche:"💅 Манікюр",    phone:"+380668980266", ig:"@brovki.od",             src:"Google Maps"  },
+  { id:26, name:"Nails Tetiana Poltava",                  city:"Полтава",          niche:"💅 Манікюр",    phone:"+380503049563", ig:"@nails_tatiana_poltava", src:"Google Maps"  },
+  { id:27, name:"⭐ Tort Vladimirovna (Ірина)",          city:"Тернопіль",        niche:"🎂 Торти",       phone:"+380968622822", ig:"@tort_vladimirovna",     src:"Google Maps", defStatus:"replied", note:"Відповіла 'Покажіть' — показали demo сайт", highlight:true },
+  { id:28, name:"MaryAnne Торти (Уляна)",                city:"Івано-Франківськ", niche:"🎂 Торти",       phone:"+380977525144", ig:"@uliana_kindratska",     src:"Google Maps"  },
+  { id:29, name:"Biscuit Family Cake",                   city:"Івано-Франківськ", niche:"🎂 Торти",       phone:"+380680686010", ig:"",                      src:"Google Maps"  },
+  { id:30, name:'Йога-студія "Лотос"',                   city:"Чернівці",         niche:"🧘 Йога",        phone:"+380501003970", ig:"",                      src:"Google Maps"  },
+];
+
+const STATUS_CYCLE = ["new","sent","replied","inwork","won","skip"];
+const STATUS_LABEL = {
+  new:     "⬜ Новий",
+  sent:    "📤 Написали",
+  replied: "💬 Відповів",
+  inwork:  "🔨 В роботі",
+  won:     "✅ Продано",
+  skip:    "❌ Пропущено",
+};
+
+// ── STATE ──
+function loadState() {
+  try { return JSON.parse(localStorage.getItem("crm_state") || "{}"); } catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem("crm_state", JSON.stringify(state));
+}
+let state = loadState();
+// init defaults
+LEADS.forEach(l => {
+  if (!state[l.id]) state[l.id] = { status: l.defStatus || "new", note: l.note || "" };
+});
+saveState(state);
+
+// ── FILTER STATE ──
+let activeFilter = "all";
+let activeNiche  = "";
+let searchQuery  = "";
+
+// ── RENDER ──
+function render() {
+  const tbody = document.getElementById("leads-body");
+  const empty = document.getElementById("empty");
+
+  let visible = LEADS.filter(l => {
+    const s = state[l.id].status;
+    if (activeFilter !== "all" && s !== activeFilter) return false;
+    if (activeNiche && l.niche !== activeNiche) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!l.name.toLowerCase().includes(q) &&
+          !l.city.toLowerCase().includes(q) &&
+          !l.phone.includes(q) &&
+          !l.ig.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  tbody.innerHTML = visible.map(l => {
+    const s = state[l.id].status;
+    const note = state[l.id].note;
+    return `
+    <tr class="lead-row status-${s}" data-id="${l.id}">
+      <td class="lead-num">${l.id}</td>
+      <td>
+        <div class="lead-name ${l.highlight?'highlight':''}">${l.name}</div>
+        <div class="lead-city">${l.city}</div>
+      </td>
+      <td><span class="niche-pill">${l.niche}</span></td>
+      <td>
+        ${l.phone
+          ? `<button class="phone-btn" onclick="copyPhone(this,'${l.phone}')">${l.phone}</button>`
+          : `<span class="no-phone">—</span>`}
+      </td>
+      <td>
+        ${l.ig
+          ? `<a class="ig-link" href="https://instagram.com/${l.ig.replace('@','')}" target="_blank">${l.ig}</a>`
+          : `<span class="no-phone">—</span>`}
+      </td>
+      <td><span class="source-badge">${l.src}</span></td>
+      <td>
+        <button class="status-btn s-${s}" onclick="cycleStatus(${l.id})">${STATUS_LABEL[s]}</button>
+      </td>
+      <td>
+        <textarea class="notes-input" rows="1" placeholder="Нотатка…"
+          onchange="saveNote(${l.id}, this.value)"
+          oninput="autoResize(this)">${escHtml(note)}</textarea>
+      </td>
+    </tr>`;
+  }).join("");
+
+  if (visible.length === 0) {
+    empty.style.display = "block";
+  } else {
+    empty.style.display = "none";
+  }
+
+  renderStats();
+}
+
+function renderStats() {
+  const counts = { new:0, sent:0, replied:0, inwork:0, won:0, skip:0 };
+  LEADS.forEach(l => counts[state[l.id].status]++);
+  document.getElementById("stats").innerHTML = `
+    <div class="stat s-new">    <span class="stat-count">${counts.new}</span>    <span>нових</span></div>
+    <div class="stat s-sent">   <span class="stat-count">${counts.sent}</span>   <span>написали</span></div>
+    <div class="stat s-replied"><span class="stat-count">${counts.replied}</span><span>відповіли</span></div>
+    <div class="stat s-inwork"> <span class="stat-count">${counts.inwork}</span> <span>в роботі</span></div>
+    <div class="stat s-won">    <span class="stat-count">${counts.won}</span>    <span>продано</span></div>
+  `;
+}
+
+// ── ACTIONS ──
+function cycleStatus(id) {
+  const cur = state[id].status;
+  const idx = STATUS_CYCLE.indexOf(cur);
+  state[id].status = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+  saveState(state);
+  render();
+  showToast("Статус: " + STATUS_LABEL[state[id].status]);
+}
+
+function saveNote(id, val) {
+  state[id].note = val;
+  saveState(state);
+}
+
+function copyPhone(btn, phone) {
+  navigator.clipboard.writeText(phone).then(() => {
+    btn.classList.add("copied");
+    btn.textContent = "✓ Скопійовано";
+    showToast("📋 " + phone);
+    setTimeout(() => {
+      btn.classList.remove("copied");
+      btn.textContent = phone;
+    }, 1800);
+  });
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── FILTER BUTTONS ──
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+document.getElementById("niche-filter").addEventListener("change", e => {
+  activeNiche = e.target.value;
+  render();
+});
+
+document.getElementById("search").addEventListener("input", e => {
+  searchQuery = e.target.value.trim();
+  render();
+});
+
+// ── INIT ──
+render();
+// auto-resize all textareas on load
+setTimeout(() => {
+  document.querySelectorAll(".notes-input").forEach(autoResize);
+}, 50);
+</script>
+</body>
+</html>
